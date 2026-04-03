@@ -1,0 +1,17 @@
+{
+  "name": "resellai",
+  "version": "1.0.0",
+  "description": "ResellAI - The Intelligence Platform for Resellers",
+  "scripts": {
+    "dev": "netlify dev",
+    "build": "echo 'Static site - no build step needed'",
+    "start": "netlify dev"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "stripe": "^14.18.0"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.0.0"
+  }
+}
