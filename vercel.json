@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "outputDirectory": "public",
+  "rewrites": [
+    { "source": "/dashboard", "destination": "/dashboard.html" },
+    { "source": "/login", "destination": "/login.html" },
+    { "source": "/signup", "destination": "/signup.html" },
+    { "source": "/pricing", "destination": "/pricing.html" },
+    { "source": "/account", "destination": "/account.html" }
+  ]
+}
