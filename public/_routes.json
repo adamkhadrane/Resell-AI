@@ -1,0 +1,30 @@
+[
+  {
+    "source": "/api/ebay/search",
+    "destination": "/functions/api/ebay/search.js"
+  },
+  {
+    "source": "/api/ebay/sold",
+    "destination": "/functions/api/ebay/sold.js"
+  },
+  {
+    "source": "/api/stripe/create-checkout",
+    "destination": "/functions/api/stripe/create-checkout.js"
+  },
+  {
+    "source": "/api/stripe/webhook",
+    "destination": "/functions/api/stripe/webhook.js"
+  },
+  {
+    "source": "/api/stripe/cancel",
+    "destination": "/functions/api/stripe/cancel.js"
+  },
+  {
+    "source": "/api/stripe/portal",
+    "destination": "/functions/api/stripe/portal.js"
+  },
+  {
+    "source": "/api/report/weekly",
+    "destination": "/functions/api/report/weekly.js"
+  }
+]
