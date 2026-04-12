@@ -217,7 +217,9 @@ async function openPortal() {
 }
 
 function confirmCancel() {
-  if (!userProfile?.subscription_id) { showToast('No active subscription found', 'error'); return; }
+  if (!userProfile?.subscription_id && !userProfile?.stripe_customer_id) {
+    showToast('No active subscription found', 'error'); return;
+  }
   document.getElementById('cancel-modal').classList.add('open');
 }
 
@@ -233,7 +235,10 @@ async function executeCancelPlan() {
   const res = await fetch('/api/stripe/cancel', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ subscriptionId: userProfile.subscription_id }),
+    body: JSON.stringify({
+      subscriptionId: userProfile.subscription_id || null,
+      customerId: userProfile.stripe_customer_id || null,
+    }),
   });
   const data = await res.json();
 
