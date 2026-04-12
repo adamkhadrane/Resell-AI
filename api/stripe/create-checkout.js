@@ -38,14 +38,17 @@ export default async function handler(request) {
       });
     }
 
+    const BASE_URL = 'https://resell-ai-rust.vercel.app';
+
     const params = new URLSearchParams({
       'payment_method_types[0]': 'card',
       'line_items[0][price]': priceId,
       'line_items[0][quantity]': '1',
       mode: 'subscription',
-      success_url: 'https://resell-ai-rust.vercel.app/dashboard.html?success=true',
-      cancel_url: 'https://resell-ai-rust.vercel.app/pricing.html?canceled=true',
-      // Pass userId in BOTH places so the webhook always finds it
+      // Pass plan + session_id in success URL so frontend can activate immediately
+      success_url: `${BASE_URL}/dashboard.html?success=true&plan=${plan}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${BASE_URL}/pricing.html?canceled=true`,
+      // Store userId in metadata for reference
       'metadata[userId]': userId,
       'subscription_data[metadata][userId]': userId,
       customer_email: email || '',
