@@ -157,9 +157,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
   if (params.get('success') === 'true') {
     window.history.replaceState({}, '', window.location.pathname);
-    showToast('🎉 Payment confirmed! Activating your plan...', 'success');
-    // Poll Supabase until the webhook has updated the plan (max ~15 seconds)
-    pollForPlanUpdate();
+    const plan = params.get('plan');
+    const sessionId = params.get('session_id');
+    if (plan && sessionId) {
+      showToast('🎉 Payment confirmed! Activating your plan...', 'success');
+      activatePlan(plan, sessionId);
+    } else {
+      showToast('🎉 Subscription activated! Welcome to ResellAI.', 'success');
+      setTimeout(() => window.location.reload(), 1500);
+    }
   }
   if (params.get('canceled') === 'true') {
     showToast('Checkout canceled — your plan was not changed.', 'info');
@@ -167,19 +173,35 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-async function pollForPlanUpdate(attempts = 0) {
-  if (attempts > 10) {
-    // Timed out — still show success and reload anyway
-    showToast('🎉 Subscription activated! Welcome to ResellAI.', 'success');
-    setTimeout(() => window.location.reload(), 1500);
-    return;
-  }
-  await new Promise(r => setTimeout(r, 1500));
-  const profile = await getProfile();
-  if (profile && profile.plan && profile.plan !== 'free') {
-    showToast('🎉 Subscription activated! Welcome to ResellAI.', 'success');
-    setTimeout(() => window.location.reload(), 1000);
-  } else {
-    pollForPlanUpdate(attempts + 1);
+async function activatePlan(plan, sessionId) {
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { showToast('Please log in again.', 'error'); return; }
+
+    const res = await fetch(
+      'https://jrnpicnlybscxarawshx.supabase.co/functions/v1/activate-plan',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpybnBpY25seWJzY3hhcmF3c2h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNzAxNzcsImV4cCI6MjA5MDc0NjE3N30.R9u3J31KVTfPlv0zIpc525-PMRiXbkDA5FL85QBnfJQ',
+        },
+        body: JSON.stringify({ session_id: sessionId, plan }),
+      }
+    );
+    const data = await res.json();
+    if (data.success) {
+      showToast('🎉 Subscription activated! Welcome to ResellAI.', 'success');
+      setTimeout(() => window.location.reload(), 1000);
+    } else {
+      console.error('activate-plan error:', data.error);
+      showToast('🎉 Payment received! Your plan will activate shortly.', 'success');
+      setTimeout(() => window.location.reload(), 3000);
+    }
+  } catch (err) {
+    console.error('activatePlan error:', err);
+    showToast('🎉 Payment received! Your plan will activate shortly.', 'success');
+    setTimeout(() => window.location.reload(), 3000);
   }
 }
