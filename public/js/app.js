@@ -157,15 +157,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
   if (params.get('success') === 'true') {
     window.history.replaceState({}, '', window.location.pathname);
-    const plan = params.get('plan');
-    const sessionId = params.get('session_id');
-    if (plan && sessionId) {
-      showToast('🎉 Payment confirmed! Activating your plan...', 'success');
-      activatePlan(plan, sessionId);
-    } else {
-      showToast('🎉 Subscription activated! Welcome to ResellAI.', 'success');
-      setTimeout(() => window.location.reload(), 1500);
-    }
+    const plan = params.get('plan') || 'basic';
+    const sessionId = params.get('session_id') || null;
+    showToast('🎉 Payment confirmed! Activating your plan...', 'success');
+    activatePlan(plan, sessionId);
   }
   if (params.get('canceled') === 'true') {
     showToast('Checkout canceled — your plan was not changed.', 'info');
@@ -173,10 +168,24 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+async function getSessionWithRetry(maxAttempts = 10) {
+  for (let i = 0; i < maxAttempts; i++) {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session?.access_token) return session;
+    await new Promise(r => setTimeout(r, 500));
+  }
+  return null;
+}
+
 async function activatePlan(plan, sessionId) {
   try {
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) { showToast('Please log in again.', 'error'); return; }
+    // Wait for Supabase to restore session after Stripe redirect (can take a moment)
+    const session = await getSessionWithRetry();
+    if (!session) {
+      showToast('Session expired — please log in and check your plan.', 'error');
+      setTimeout(() => window.location.href = '/login.html', 2000);
+      return;
+    }
 
     const res = await fetch(
       'https://jrnpicnlybscxarawshx.supabase.co/functions/v1/activate-plan',
@@ -187,21 +196,22 @@ async function activatePlan(plan, sessionId) {
           'Authorization': `Bearer ${session.access_token}`,
           'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpybnBpY25seWJzY3hhcmF3c2h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNzAxNzcsImV4cCI6MjA5MDc0NjE3N30.R9u3J31KVTfPlv0zIpc525-PMRiXbkDA5FL85QBnfJQ',
         },
-        body: JSON.stringify({ session_id: sessionId, plan }),
+        body: JSON.stringify({ plan, session_id: sessionId }),
       }
     );
     const data = await res.json();
     if (data.success) {
-      showToast('🎉 Subscription activated! Welcome to ResellAI.', 'success');
-      setTimeout(() => window.location.reload(), 1000);
+      showToast('🎉 You\'re now on the ' + data.plan.charAt(0).toUpperCase() + data.plan.slice(1) + ' plan!', 'success');
+      setTimeout(() => window.location.reload(), 1200);
     } else {
-      console.error('activate-plan error:', data.error);
-      showToast('🎉 Payment received! Your plan will activate shortly.', 'success');
-      setTimeout(() => window.location.reload(), 3000);
+      console.error('activate-plan failed:', data.error);
+      // Still reload — the plan may have been set by the webhook in the meantime
+      showToast('🎉 Payment received! Loading your plan...', 'success');
+      setTimeout(() => window.location.reload(), 2500);
     }
   } catch (err) {
     console.error('activatePlan error:', err);
-    showToast('🎉 Payment received! Your plan will activate shortly.', 'success');
-    setTimeout(() => window.location.reload(), 3000);
+    showToast('🎉 Payment received! Loading your plan...', 'success');
+    setTimeout(() => window.location.reload(), 2500);
   }
 }
