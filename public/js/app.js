@@ -179,30 +179,23 @@ async function getSessionWithRetry(maxAttempts = 10) {
 
 async function activatePlan(plan, sessionId) {
   if (!sessionId) {
-    // No session_id means old create-checkout.js is still live — just reload
     showToast('🎉 Payment received! Loading your plan...', 'success');
     setTimeout(() => window.location.reload(), 2500);
     return;
   }
 
   try {
-    const res = await fetch(
-      'https://jrnpicnlybscxarawshx.supabase.co/functions/v1/activate-plan',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpybnBpY25seWJzY3hhcmF3c2h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNzAxNzcsImV4cCI6MjA5MDc0NjE3N30.R9u3J31KVTfPlv0zIpc525-PMRiXbkDA5FL85QBnfJQ',
-        },
-        body: JSON.stringify({ session_id: sessionId, plan }),
-      }
-    );
+    const res = await fetch('/api/stripe/activate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId, plan }),
+    });
     const data = await res.json();
     if (data.success) {
       showToast('🎉 You\'re now on the ' + data.plan.charAt(0).toUpperCase() + data.plan.slice(1) + ' plan!', 'success');
       setTimeout(() => window.location.reload(), 1200);
     } else {
-      console.error('activate-plan failed:', data.error);
+      console.error('activate failed:', data.error);
       showToast('🎉 Payment received! Loading your plan...', 'success');
       setTimeout(() => window.location.reload(), 2500);
     }
