@@ -178,25 +178,23 @@ async function getSessionWithRetry(maxAttempts = 10) {
 }
 
 async function activatePlan(plan, sessionId) {
-  try {
-    // Wait for Supabase to restore session after Stripe redirect (can take a moment)
-    const session = await getSessionWithRetry();
-    if (!session) {
-      showToast('Session expired — please log in and check your plan.', 'error');
-      setTimeout(() => window.location.href = '/login.html', 2000);
-      return;
-    }
+  if (!sessionId) {
+    // No session_id means old create-checkout.js is still live — just reload
+    showToast('🎉 Payment received! Loading your plan...', 'success');
+    setTimeout(() => window.location.reload(), 2500);
+    return;
+  }
 
+  try {
     const res = await fetch(
       'https://jrnpicnlybscxarawshx.supabase.co/functions/v1/activate-plan',
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
           'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpybnBpY25seWJzY3hhcmF3c2h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNzAxNzcsImV4cCI6MjA5MDc0NjE3N30.R9u3J31KVTfPlv0zIpc525-PMRiXbkDA5FL85QBnfJQ',
         },
-        body: JSON.stringify({ plan, session_id: sessionId }),
+        body: JSON.stringify({ session_id: sessionId, plan }),
       }
     );
     const data = await res.json();
@@ -205,7 +203,6 @@ async function activatePlan(plan, sessionId) {
       setTimeout(() => window.location.reload(), 1200);
     } else {
       console.error('activate-plan failed:', data.error);
-      // Still reload — the plan may have been set by the webhook in the meantime
       showToast('🎉 Payment received! Loading your plan...', 'success');
       setTimeout(() => window.location.reload(), 2500);
     }
