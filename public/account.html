@@ -181,11 +181,9 @@ function renderSubscription() {
 
   const planName = p.plan.charAt(0).toUpperCase() + p.plan.slice(1);
   const price = p.plan === 'premium' ? '$15' : '$9';
-  const periodEnd = (() => {
-    if (!p.current_period_end) return 'Unknown';
-    const d = new Date(p.current_period_end);
-    return isNaN(d.getTime()) ? 'Unknown' : d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-  })();
+  const periodEnd = p.current_period_end
+    ? new Date(p.current_period_end).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : 'Unknown';
 
   content.innerHTML = `
     <div class="plan-hero">
