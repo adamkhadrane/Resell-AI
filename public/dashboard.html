@@ -569,25 +569,55 @@ async function loadPriceIntel() {
 // ─── SOURCE SPY ────────────────────────────────────────────────────────────────
 function loadSources() {
   const sources = [
-    { icon: '🏪', name: 'Thrift Stores', tip: 'Search Goodwill, Salvation Army, and local thrift stores for vintage clothing, sneakers, and electronics. Sort by color tags on sale days for 50% off.' },
-    { icon: '🎯', name: 'Target Clearance', tip: 'Check Target clearance endcaps — especially electronics and collectible toys. Use the Target app to see clearance prices before you go.' },
-    { icon: '🛒', name: 'Walmart Rollbacks', tip: 'Walmart marks down electronics and sneakers at end of season. Look for yellow "Rollback" stickers and cross-reference with eBay sold prices.' },
-    { icon: '📦', name: 'Liquidation Sites', tip: 'B-Stock, Liquidity Services, and Direct Liquidation sell pallets of Amazon/Target returns at huge discounts. Start with small lots under $100.' },
-    { icon: '🏷', name: 'Facebook Marketplace', tip: 'Search "selling collection" and sort by Newest. Message sellers immediately — first reply usually wins. Lowball 20-30% of asking.' },
-    { icon: '🖥', name: 'eBay Underpriced Listings', tip: 'Search eBay with typos (e.g. "Nikee", "Supremo") to find listings nobody else can find. Flip immediately on the correct listing.' },
-    { icon: '🏬', name: 'Nike & Adidas Outlets', tip: 'Outlet stores carry retro colorways and last-season models at 30-60% off. Check against StockX prices — limited sizes resell at full price.' },
-    { icon: '🃏', name: 'Dollar Tree & Five Below', tip: 'Pokemon and sports card packs occasionally show up here. Also check for collectible toys that retail for much more online.' },
+    { icon: '🏪', name: 'Thrift Stores', query: 'thrift store', tip: 'Goodwill, Salvation Army, and local thrift stores. Check color-tag sale days for 50% off. Best for vintage clothing, sneakers, and electronics.' },
+    { icon: '🎯', name: 'Target Clearance', query: 'Target', tip: 'Check Target clearance endcaps — especially electronics and collectible toys. Use the Target app to see clearance prices before you go.' },
+    { icon: '🛒', name: 'Walmart Rollbacks', query: 'Walmart', tip: 'Walmart marks down electronics and sneakers at end of season. Look for yellow "Rollback" stickers and cross-reference with eBay sold prices.' },
+    { icon: '🏬', name: 'Nike & Adidas Outlets', query: 'Nike outlet OR Adidas outlet', tip: 'Outlet stores carry retro colorways and last-season models at 30-60% off. Check against StockX — limited sizes resell at full price.' },
+    { icon: '🃏', name: 'Dollar Tree & Five Below', query: 'Dollar Tree OR Five Below', tip: 'Pokemon and sports card packs occasionally appear here. Also check for collectible toys that retail for much more online.' },
+    { icon: '📦', name: 'Liquidation Sites', query: null, tip: 'B-Stock, Liquidity Services, and Direct Liquidation sell pallets of Amazon/Target returns at huge discounts. Start with small lots under $100.', link: 'https://bstock.com' },
+    { icon: '🏷', name: 'Facebook Marketplace', query: null, tip: 'Search "selling collection" and sort by Newest. Message sellers immediately — first reply usually wins. Lowball 20–30% of asking.', link: 'https://facebook.com/marketplace' },
+    { icon: '🖥', name: 'eBay Underpriced Listings', query: null, tip: 'Search eBay with typos (e.g. "Nikee", "Supremo") to find listings nobody else sees. Flip immediately on the correct listing.', link: 'https://ebay.com' },
   ];
 
-  document.getElementById('sources-list').innerHTML = sources.map(s => `
-    <div class="source-item">
-      <div class="source-icon">${s.icon}</div>
-      <div>
-        <div style="font-weight:700;margin-bottom:.3rem;">${s.name}</div>
-        <p style="font-size:.875rem;">${s.tip}</p>
+  const list = document.getElementById('sources-list');
+
+  // Try geolocation for map links
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => renderSources(sources, pos.coords.latitude, pos.coords.longitude),
+      () => renderSources(sources, null, null),
+      { timeout: 5000 }
+    );
+  } else {
+    renderSources(sources, null, null);
+  }
+}
+
+function renderSources(sources, lat, lng) {
+  const list = document.getElementById('sources-list');
+  list.innerHTML = sources.map(s => {
+    let href;
+    if (s.link) {
+      href = s.link;
+    } else if (lat && lng) {
+      href = `https://www.google.com/maps/search/${encodeURIComponent(s.query)}/@${lat},${lng},13z`;
+    } else {
+      href = `https://www.google.com/maps/search/${encodeURIComponent(s.query)}`;
+    }
+    const locationLabel = (lat && lng && !s.link) ? 'Find near me →' : 'Open →';
+    return `
+      <div class="source-item">
+        <div class="source-icon">${s.icon}</div>
+        <div style="flex:1;">
+          <div style="font-weight:700;margin-bottom:.3rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;">
+            <span>${s.name}</span>
+            <a href="${href}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" style="font-size:.75rem;padding:.25rem .6rem;white-space:nowrap;">${locationLabel}</a>
+          </div>
+          <p style="font-size:.875rem;">${s.tip}</p>
+        </div>
       </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 // ─── TREND ALERTS ─────────────────────────────────────────────────────────────
@@ -763,6 +793,7 @@ function closeSaveModal() {
 
 async function confirmSave() {
   if (!pendingSaveItem || !currentUser) return;
+  const flip = pendingSaveItem;
   const plan = currentProfile?.plan || 'free';
 
   // Free plan: max 5 saved flips
