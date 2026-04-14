@@ -214,6 +214,63 @@ function toggleFaq(el) {
   answer.classList.toggle('open');
   icon.textContent = answer.classList.contains('open') ? '−' : '+';
 }
+
+// On load, check if user already has a paid plan and update buttons
+(async () => {
+  const profile = await getProfile();
+  if (!profile || profile.plan === 'free') return;
+
+  // User already has a paid plan — replace checkout buttons with portal link
+  const basicBtn = document.getElementById('checkout-btn-basic');
+  const premiumBtn = document.getElementById('checkout-btn-premium');
+
+  if (profile.plan === 'basic') {
+    // Already on basic — show "Current plan" for basic, "Upgrade" for premium
+    if (basicBtn) {
+      basicBtn.textContent = '✓ Current plan';
+      basicBtn.disabled = true;
+      basicBtn.style.opacity = '0.6';
+    }
+    if (premiumBtn) {
+      premiumBtn.textContent = 'Upgrade to Premium →';
+      premiumBtn.onclick = () => openBillingPortal();
+    }
+  } else if (profile.plan === 'premium') {
+    // Already on premium
+    if (premiumBtn) {
+      premiumBtn.textContent = '✓ Current plan';
+      premiumBtn.disabled = true;
+      premiumBtn.style.opacity = '0.6';
+    }
+    if (basicBtn) {
+      basicBtn.textContent = 'Downgrade to Basic';
+      basicBtn.onclick = () => openBillingPortal();
+    }
+  }
+})();
+
+async function openBillingPortal() {
+  const profile = await getProfile();
+  if (!profile?.stripe_customer_id) {
+    showToast('No billing account found. Please contact support.', 'error');
+    return;
+  }
+  const btn = event?.target;
+  if (btn) { btn.disabled = true; btn.textContent = 'Opening...'; }
+
+  const res = await fetch('/api/stripe/portal', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ customerId: profile.stripe_customer_id }),
+  });
+  const data = await res.json();
+  if (data.url) {
+    window.location.href = data.url;
+  } else {
+    showToast(data.error || 'Failed to open billing portal', 'error');
+    if (btn) { btn.disabled = false; btn.textContent = 'Manage plan'; }
+  }
+}
 </script>
 </body>
 </html>
