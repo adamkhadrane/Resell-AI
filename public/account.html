@@ -181,7 +181,13 @@ function renderSubscription() {
 
   const planName = p.plan.charAt(0).toUpperCase() + p.plan.slice(1);
   const price = p.plan === 'premium' ? '$15' : '$9';
-  const periodEnd = p.current_period_end ? new Date(p.current_period_end).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Unknown';
+  const periodEnd = (() => {
+    if (!p.current_period_end) return 'Unknown';
+    // Postgres returns "2026-05-12 14:12:00+00" — normalize to ISO format
+    const iso = p.current_period_end.replace(' ', 'T').replace('+00', 'Z');
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? 'Unknown' : d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  })();
 
   content.innerHTML = `
     <div class="plan-hero">
