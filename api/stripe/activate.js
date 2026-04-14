@@ -33,7 +33,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Payment not completed' });
     }
 
-    // 2. Find user in Supabase by email
+    // 2. Find user in Supabase by userId metadata or email
     const email = session.customer_details?.email || session.customer_email;
     const userId = session.metadata?.userId || null;
 
@@ -55,7 +55,7 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'User not found for email: ' + email });
     }
 
-    // 3. Build update payload
+    // 3. Build update — only set fields that have real values
     const sub = session.subscription;
     const updateData = {
       plan: resolvedPlan,
@@ -63,9 +63,16 @@ export default async function handler(req, res) {
       stripe_customer_id: session.customer,
       updated_at: new Date().toISOString(),
     };
+
     if (sub?.id) updateData.subscription_id = sub.id;
+
     if (sub?.current_period_end) {
       updateData.current_period_end = new Date(sub.current_period_end * 1000).toISOString();
+    } else {
+      // No subscription object (e.g. test with coupon) — set 1 month from now
+      const oneMonthFromNow = new Date();
+      oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+      updateData.current_period_end = oneMonthFromNow.toISOString();
     }
 
     // 4. Update Supabase
