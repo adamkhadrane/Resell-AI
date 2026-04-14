@@ -149,7 +149,6 @@ let userProfile = null;
   userProfile = await getProfile();
   if (!userProfile) return;
 
-  // Fill profile
   const initials = (userProfile.full_name || userProfile.email || '?').charAt(0).toUpperCase();
   document.getElementById('avatar-initials').textContent = initials;
   document.getElementById('profile-name').textContent = userProfile.full_name || 'No name set';
@@ -157,7 +156,6 @@ let userProfile = null;
   document.getElementById('member-since').textContent = new Date(userProfile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   document.getElementById('plan-display').innerHTML = getPlanBadge(userProfile.plan);
 
-  // Fill subscription section
   renderSubscription();
 })();
 
@@ -181,18 +179,12 @@ function renderSubscription() {
 
   const planName = p.plan.charAt(0).toUpperCase() + p.plan.slice(1);
   const price = p.plan === 'premium' ? '$15' : '$9';
-  const periodEnd = p.current_period_end
-    ? new Date(p.current_period_end).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-    : 'Unknown';
+  const statusLabel = p.subscription_status === 'active' ? '✅ Active' : '⚠️ ' + p.subscription_status;
 
   content.innerHTML = `
     <div class="plan-hero">
       <div class="plan-hero-name">${planName} Plan — ${price}/month</div>
-      <div class="plan-hero-sub">Status: ${p.subscription_status === 'active' ? '✅ Active' : '⚠️ ' + p.subscription_status}</div>
-    </div>
-    <div class="info-row">
-      <span class="info-label">Next billing date</span>
-      <span class="info-value">${periodEnd}</span>
+      <div class="plan-hero-sub">Status: ${statusLabel}</div>
     </div>
     <div class="info-row">
       <span class="info-label">Payment</span>
