@@ -12,7 +12,11 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <style>
     .page { display: none; }
-    .page.active { display: block; }
+    .page.active { display: block; animation: pageIn .22s ease; }
+    @keyframes pageIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
     .search-bar { display: flex; gap: .75rem; align-items: center; margin-bottom: 1.5rem; }
     .search-bar .form-input { flex: 1; }
     .filter-row { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
@@ -429,9 +433,12 @@ function updateSearchBanner() {
 
 // ─── PAGE NAV ─────────────────────────────────────────────────────────────────
 function showPage(pageId, btn) {
+  const current = document.querySelector('.page.active');
+  const next = document.getElementById('page-' + pageId);
+  if (current === next) return; // already on this page
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
-  document.getElementById('page-' + pageId).classList.add('active');
+  next.classList.add('active');
   if (btn) btn.classList.add('active');
 
   // Lazy load
