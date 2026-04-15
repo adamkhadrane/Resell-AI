@@ -6,7 +6,7 @@ export default async function handler(request) {
 
   try {
     const { customerId } = await request.json();
-    const params = new URLSearchParams({ customer: customerId, return_url: 'https://resell-ai-rust.vercel.app/account.html' });
+    const params = new URLSearchParams({ customer: customerId, return_url: 'https://resellai.tools/account.html' });
 
     const res = await fetch('https://api.stripe.com/v1/billing_portal/sessions', {
       method: 'POST',
