@@ -38,7 +38,7 @@ export default async function handler(request) {
       });
     }
 
-    const BASE_URL = 'https://resell-ai-rust.vercel.app';
+    const BASE_URL = 'https://resellai.tools';
 
     const params = new URLSearchParams({
       'payment_method_types[0]': 'card',
